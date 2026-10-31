@@ -155,7 +155,7 @@ export class UploadController {
     @Body() deleteDto: DeleteImageDto,
   ): { success: boolean; message: string } {
     const deleted = this.uploadService.deleteFile(filename, deleteDto.type);
-    
+
     if (deleted) {
       return {
         success: true,
