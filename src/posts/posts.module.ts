@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Post } from './entities/post.entity';
 import { PostsController } from './controllers/posts.controller';
 import { PostsService } from './services/posts.service';
-import { Empresa } from 'src/empresas/entities/empresa.entity';
+import { Empresa } from '../empresas/entities/empresa.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Post, Empresa])],

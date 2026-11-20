@@ -3,7 +3,7 @@ import { AuthService } from '../services/auth.service';
 import {
   CreateUsuarioDto,
   UpdateUsuarioDto,
-} from 'src/usuarios/dto/create-usuario.dto';
+} from '../../usuarios/dto/create-usuario.dto';
 import type { Request } from 'express';
 import { LocalAuthGuard } from '../guards/local-auth.guard';
 import { Public } from '../decorators/public.decorator';

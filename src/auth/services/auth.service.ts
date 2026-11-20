@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   CreateUsuarioDto,
   UpdateUsuarioDto,
-} from 'src/usuarios/dto/create-usuario.dto';
-import { UsuarioService } from 'src/usuarios/services/usuario.service';
+} from '../../usuarios/dto/create-usuario.dto';
+import { UsuarioService } from '../../usuarios/services/usuario.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 

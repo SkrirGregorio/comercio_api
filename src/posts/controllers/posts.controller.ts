@@ -12,8 +12,8 @@ import {
 } from '@nestjs/common';
 import { PostsService } from '../services/posts.service';
 import { CreatePostDto, UpdatePostDto } from '../dtos/post.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Public } from '../../auth/decorators/public.decorator';
 import { Request as ExpressRequest } from 'express';
 
 @UseGuards(JwtAuthGuard)

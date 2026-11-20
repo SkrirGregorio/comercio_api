@@ -8,8 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Resena } from '../entities/resena.entity';
 import { CreateResenaDto, UpdateResenaDto } from '../dtos/resena.dto';
-import { Empresa } from 'src/empresas/entities/empresa.entity';
-import { Usuario } from 'src/usuarios/entities/usuario.entity';
+import { Empresa } from '../../empresas/entities/empresa.entity';
+import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 @Injectable()
 export class ResenasService {

@@ -11,9 +11,9 @@ import {
 } from '@nestjs/common';
 import { ResenasService } from '../services/resenas.service';
 import { CreateResenaDto, UpdateResenaDto } from '../dtos/resena.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { Public } from 'src/auth/decorators/public.decorator';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Public } from '../../auth/decorators/public.decorator';
+import { GetUser } from '../../auth/decorators/get-user.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('resenas')

@@ -12,8 +12,8 @@ import {
 import { Request as ExpressRequest } from 'express';
 import { EmpresasService } from '../services/empresas.service';
 import { CreateEmpresaDto, UpdateEmpresaDto } from '../dtos/empresa.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Public } from '../../auth/decorators/public.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('empresas')
