@@ -147,11 +147,14 @@ export class UploadController {
   }
 
   @Delete('image/:filename')
-  deleteImage(
+  async deleteImage(
     @Param('filename') filename: string,
     @Body() deleteDto: DeleteImageDto,
-  ): { success: boolean; message: string } {
-    const deleted = this.uploadService.deleteFile(filename, deleteDto.type);
+  ): Promise<{ success: boolean; message: string }> {
+    const deleted = await this.uploadService.deleteFile(
+      filename,
+      deleteDto.type,
+    );
 
     if (deleted) {
       return {

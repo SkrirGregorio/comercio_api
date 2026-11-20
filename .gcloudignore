@@ -1,0 +1,14 @@
+# Archivos que NO se envían a Cloud Build (gcloud builds submit)
+.git
+.gitignore
+.gcloudignore
+node_modules/
+dist/
+coverage/
+test/
+public/
+deploy/
+.env
+.env.*
+*.tsbuildinfo
+*.md
