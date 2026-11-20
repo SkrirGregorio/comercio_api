@@ -1,33 +1,29 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  UseGuards,
-  Request,
+  Get,
+  Param,
   ParseIntPipe,
+  Patch,
+  Post,
 } from '@nestjs/common';
 import { PostsService } from '../services/posts.service';
 import { CreatePostDto, UpdatePostDto } from '../dtos/post.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Public } from '../../auth/decorators/public.decorator';
-import { Request as ExpressRequest } from 'express';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { GetUser } from '../../auth/decorators/get-user.decorator';
+import type { JwtUser } from '../../auth/strategies/jwt.strategy';
+import { Role } from '../../usuarios/entities/usuario.entity';
 
-@UseGuards(JwtAuthGuard)
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Post()
-  create(
-    @Body() createPostDto: CreatePostDto,
-    @Request() req: ExpressRequest & { user: { userId: number } },
-  ) {
-    const propietarioId = req.user.userId;
-    return this.postsService.create(createPostDto, propietarioId);
+  @Roles(Role.PROPIETARIO, Role.ADMIN)
+  create(@Body() dto: CreatePostDto, @GetUser() user: JwtUser) {
+    return this.postsService.create(dto, user);
   }
 
   @Public()
@@ -49,21 +45,18 @@ export class PostsController {
   }
 
   @Patch(':id')
+  @Roles(Role.PROPIETARIO, Role.ADMIN)
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updatePostDto: UpdatePostDto,
-    @Request() req: ExpressRequest & { user: { userId: number } },
+    @Body() dto: UpdatePostDto,
+    @GetUser() user: JwtUser,
   ) {
-    const userId = req.user.userId;
-    return this.postsService.update(id, updatePostDto, userId);
+    return this.postsService.update(id, dto, user);
   }
 
   @Delete(':id')
-  remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: ExpressRequest & { user: { userId: number } },
-  ) {
-    const userId = req.user.userId;
-    return this.postsService.remove(id, userId);
+  @Roles(Role.PROPIETARIO, Role.ADMIN)
+  remove(@Param('id', ParseIntPipe) id: number, @GetUser() user: JwtUser) {
+    return this.postsService.remove(id, user);
   }
 }

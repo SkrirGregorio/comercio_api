@@ -1,46 +1,48 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  UseGuards,
+  Get,
+  Param,
   ParseIntPipe,
+  Patch,
+  Post,
   Query,
 } from '@nestjs/common';
 import { ServiciosService } from '../services/servicios.service';
 import { CreateServicioDto, UpdateServicioDto } from '../dtos/servicio.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Public } from '../../auth/decorators/public.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { GetUser } from '../../auth/decorators/get-user.decorator';
+import type { JwtUser } from '../../auth/strategies/jwt.strategy';
 import { Role } from '../../usuarios/entities/usuario.entity';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('servicios')
 export class ServiciosController {
   constructor(private readonly serviciosService: ServiciosService) {}
 
+  /**
+   * Crea un servicio del catálogo. Si se envía `empresaId`, lo vincula a esa
+   * empresa (reutilizando el servicio si ya existe con el mismo nombre).
+   */
   @Post()
   @Roles(Role.ADMIN, Role.PROPIETARIO)
-  create(@Body() createServicioDto: CreateServicioDto) {
-    return this.serviciosService.create(createServicioDto);
+  create(@Body() dto: CreateServicioDto, @GetUser() user: JwtUser) {
+    return this.serviciosService.create(dto, user);
   }
 
   @Public()
   @Get()
-  findAll() {
-    return this.serviciosService.findAll();
+  findAll(@Query('empresaId') empresaId?: string) {
+    const id = empresaId ? Number.parseInt(empresaId, 10) : NaN;
+    return Number.isInteger(id)
+      ? this.serviciosService.findByEmpresa(id)
+      : this.serviciosService.findAll();
   }
 
   @Public()
   @Get('search')
-  searchByName(@Query('nombre') nombre: string) {
-    if (!nombre) {
-      return this.serviciosService.findAll();
-    }
+  searchByName(@Query('nombre') nombre = '') {
     return this.serviciosService.searchByName(nombre);
   }
 
@@ -50,17 +52,18 @@ export class ServiciosController {
     return this.serviciosService.findOne(id);
   }
 
+  // El catálogo es compartido entre empresas: solo un admin puede editarlo o borrarlo.
   @Patch(':id')
-  @Roles(Role.ADMIN) // Solo administradores pueden actualizar servicios
+  @Roles(Role.ADMIN)
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateServicioDto: UpdateServicioDto,
+    @Body() dto: UpdateServicioDto,
   ) {
-    return this.serviciosService.update(id, updateServicioDto);
+    return this.serviciosService.update(id, dto);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN) // Solo administradores pueden eliminar servicios
+  @Roles(Role.ADMIN)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.serviciosService.remove(id);
   }

@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsInt,
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  MaxLength,
+} from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
 
 export class CreateServicioDto {
@@ -10,6 +17,12 @@ export class CreateServicioDto {
   @IsOptional()
   @IsString()
   descripcion?: string;
+
+  /** Empresa a la que se vinculará el servicio (debe pertenecer al usuario). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  empresaId?: number;
 }
 
 export class UpdateServicioDto extends PartialType(CreateServicioDto) {}

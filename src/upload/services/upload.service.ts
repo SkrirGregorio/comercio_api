@@ -10,6 +10,37 @@ import {
 } from '../interfaces/upload.interface';
 import { v4 as uuidv4 } from 'uuid';
 
+/** Detecta el tipo real de imagen por su firma (magic bytes). */
+function detectImageType(buf: Buffer): { mime: string; ext: string } | null {
+  if (
+    buf.length >= 3 &&
+    buf[0] === 0xff &&
+    buf[1] === 0xd8 &&
+    buf[2] === 0xff
+  ) {
+    return { mime: 'image/jpeg', ext: '.jpg' };
+  }
+  if (
+    buf.length >= 8 &&
+    buf
+      .subarray(0, 8)
+      .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+  ) {
+    return { mime: 'image/png', ext: '.png' };
+  }
+  if (
+    buf.length >= 12 &&
+    buf.subarray(0, 4).toString('ascii') === 'RIFF' &&
+    buf.subarray(8, 12).toString('ascii') === 'WEBP'
+  ) {
+    return { mime: 'image/webp', ext: '.webp' };
+  }
+  return null;
+}
+
+/** Nombres generados por este servicio: <uuid>.<ext>. Evita path traversal al borrar. */
+const SAFE_FILENAME = /^[0-9a-f-]{36}\.(jpg|jpeg|png|webp)$/i;
+
 @Injectable()
 export class UploadService {
   private readonly uploadDir = path.join(process.cwd(), 'public', 'uploads');
@@ -105,6 +136,9 @@ export class UploadService {
   }
 
   deleteFile(filename: string, type: ImageType): boolean {
+    if (!SAFE_FILENAME.test(filename)) {
+      throw new BadRequestException('Nombre de archivo inválido');
+    }
     try {
       const subdirectory = this.getUploadSubdirectory(type);
       const filePath = path.join(this.uploadDir, subdirectory, filename);
@@ -132,9 +166,14 @@ export class UploadService {
       throw new BadRequestException('No se proporcionó ningún archivo');
     }
 
-    // Generar nombre único con extensión
-    const fileExtension = path.extname(file.originalname);
-    const fileName = `${uuidv4()}${fileExtension}`;
+    // El tipo y la extensión se derivan del contenido real, no de lo que declara el cliente
+    const detected = detectImageType(file.buffer);
+    if (!detected) {
+      throw new BadRequestException(
+        'El archivo no es una imagen válida (JPEG, PNG o WebP).',
+      );
+    }
+    const fileName = `${uuidv4()}${detected.ext}`;
 
     // Obtener directorio de destino
     const subdirectory = this.getUploadSubdirectory(type);
@@ -151,9 +190,9 @@ export class UploadService {
 
     return {
       filename: fileName,
-      originalName: file.originalname,
+      originalName: path.basename(file.originalname),
       size: file.size,
-      mimetype: file.mimetype,
+      mimetype: detected.mime,
       url: this.generateFileUrl(fileName, type),
     };
   }

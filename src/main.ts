@@ -1,30 +1,38 @@
 import { NestFactory, Reflector } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
-import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import helmet from 'helmet';
 import { join } from 'path';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Configurar archivos estáticos para la carpeta uploads
+  // Cabeceras de seguridad HTTP (nosniff, frameguard, HSTS, etc.).
+  // CORP en cross-origin para que la PWA (otro origen) pueda mostrar las imágenes subidas.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+  // Detrás del balanceador de Cloud Run la IP real del cliente viene en X-Forwarded-For
+  app.set('trust proxy', 1);
+
   app.useStaticAssets(join(__dirname, '..', 'public', 'uploads'), {
     prefix: '/uploads',
+    dotfiles: 'deny',
+    index: false,
   });
 
-  // Habilitar CORS para permitir peticiones desde cualquier origen
+  // CORS restringido a los orígenes de la PWA (lista separada por comas)
+  const origins = (process.env.CORS_ORIGINS ?? 'http://localhost:4200')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: true, // Permite cualquier origen (para desarrollo)
+    origin: origins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true, // Permite envío de cookies/credentials
   });
 
-  const reflector = app.get(Reflector);
-  app.useGlobalGuards(new JwtAuthGuard(reflector));
-
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(reflector));
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -33,6 +41,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
   await app.listen(process.env.PORT ?? 3000);
 }
 void bootstrap();

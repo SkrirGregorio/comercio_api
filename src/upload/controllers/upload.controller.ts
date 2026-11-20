@@ -7,7 +7,6 @@ import {
   UploadedFile,
   Body,
   BadRequestException,
-  UseGuards,
   Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -15,10 +14,8 @@ import * as multer from 'multer';
 import { UploadService } from '../services/upload.service';
 import { UploadImageDto, DeleteImageDto } from '../dtos/upload.dto';
 import { ImageType, UploadResult } from '../interfaces/upload.interface';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @Controller('upload')
-@UseGuards(JwtAuthGuard)
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 

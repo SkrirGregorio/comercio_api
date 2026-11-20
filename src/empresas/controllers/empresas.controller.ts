@@ -1,21 +1,21 @@
 import {
   Body,
   Controller,
-  Get,
-  Post,
-  UseGuards,
-  Request,
-  Param,
-  Patch,
   Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { Request as ExpressRequest } from 'express';
 import { EmpresasService } from '../services/empresas.service';
 import { CreateEmpresaDto, UpdateEmpresaDto } from '../dtos/empresa.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Public } from '../../auth/decorators/public.decorator';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { GetUser } from '../../auth/decorators/get-user.decorator';
+import type { JwtUser } from '../../auth/strategies/jwt.strategy';
+import { Role } from '../../usuarios/entities/usuario.entity';
 
-@UseGuards(JwtAuthGuard)
 @Controller('empresas')
 export class EmpresasController {
   constructor(private readonly empresasService: EmpresasService) {}
@@ -27,37 +27,46 @@ export class EmpresasController {
   }
 
   @Get('mis-empresas')
-  findMyEmpresas(
-    @Request() req: ExpressRequest & { user: { userId: number } },
-  ) {
-    const propietarioId = req.user.userId;
-    return this.empresasService.findByPropietario(propietarioId);
+  @Roles(Role.PROPIETARIO, Role.ADMIN)
+  findMyEmpresas(@GetUser() user: JwtUser) {
+    return this.empresasService.findByPropietario(user.userId);
   }
 
   @Public()
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.empresasService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.empresasService.findOne(id);
   }
 
   @Post()
-  create(
-    @Body() createEmpresaDto: CreateEmpresaDto,
-    @Request() req: ExpressRequest & { user: { userId: number } },
-  ) {
-    console.log('CreateEmpresaDto received:', req.user);
-    const propietarioId = req.user.userId;
-    console.log('User ID from token:', propietarioId);
-    return this.empresasService.create(createEmpresaDto, propietarioId);
+  @Roles(Role.PROPIETARIO, Role.ADMIN)
+  create(@Body() dto: CreateEmpresaDto, @GetUser() user: JwtUser) {
+    return this.empresasService.create(dto, user.userId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEmpresaDto: UpdateEmpresaDto) {
-    return this.empresasService.update(+id, updateEmpresaDto);
+  @Roles(Role.PROPIETARIO, Role.ADMIN)
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateEmpresaDto,
+    @GetUser() user: JwtUser,
+  ) {
+    return this.empresasService.update(id, dto, user);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.empresasService.remove(+id);
+  @Roles(Role.PROPIETARIO, Role.ADMIN)
+  remove(@Param('id', ParseIntPipe) id: number, @GetUser() user: JwtUser) {
+    return this.empresasService.remove(id, user);
+  }
+
+  @Delete(':id/servicios/:servicioId')
+  @Roles(Role.PROPIETARIO, Role.ADMIN)
+  quitarServicio(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('servicioId', ParseIntPipe) servicioId: number,
+    @GetUser() user: JwtUser,
+  ) {
+    return this.empresasService.quitarServicio(id, servicioId, user);
   }
 }

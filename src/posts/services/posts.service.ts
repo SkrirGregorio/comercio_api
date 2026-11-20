@@ -1,13 +1,19 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post } from '../entities/post.entity';
 import { CreatePostDto, UpdatePostDto } from '../dtos/post.dto';
 import { Empresa } from '../../empresas/entities/empresa.entity';
+import { Role } from '../../usuarios/entities/usuario.entity';
+import type { JwtUser } from '../../auth/strategies/jwt.strategy';
+
+function puedeGestionar(empresa: Empresa, user: JwtUser): boolean {
+  return user.role === Role.ADMIN || empresa.propietario?.id === user.userId;
+}
 
 @Injectable()
 export class PostsService {
@@ -18,7 +24,7 @@ export class PostsService {
     private readonly empresaRepo: Repository<Empresa>,
   ) {}
 
-  async create(createPostDto: CreatePostDto, userId: number): Promise<Post> {
+  async create(createPostDto: CreatePostDto, user: JwtUser): Promise<Post> {
     const { empresaId, ...postData } = createPostDto;
 
     const empresa = await this.empresaRepo.findOne({
@@ -29,6 +35,12 @@ export class PostsService {
     if (!empresa) {
       throw new NotFoundException(
         `Empresa con ID #${empresaId} no encontrada.`,
+      );
+    }
+
+    if (!puedeGestionar(empresa, user)) {
+      throw new ForbiddenException(
+        'Solo el propietario de la empresa puede publicar en ella.',
       );
     }
 
@@ -68,12 +80,12 @@ export class PostsService {
   async update(
     id: number,
     updatePostDto: UpdatePostDto,
-    userId: number,
+    user: JwtUser,
   ): Promise<Post> {
     const post = await this.findOne(id);
 
-    if (post.empresa.propietario.id !== userId) {
-      throw new UnauthorizedException(
+    if (!puedeGestionar(post.empresa, user)) {
+      throw new ForbiddenException(
         'No tienes permiso para modificar este post.',
       );
     }
@@ -84,10 +96,10 @@ export class PostsService {
     return this.postRepo.save(post);
   }
 
-  async remove(id: number, userId: number): Promise<void> {
+  async remove(id: number, user: JwtUser): Promise<void> {
     const post = await this.findOne(id);
-    if (post.empresa.propietario.id !== userId) {
-      throw new UnauthorizedException(
+    if (!puedeGestionar(post.empresa, user)) {
+      throw new ForbiddenException(
         'No tienes permiso para eliminar este post.',
       );
     }

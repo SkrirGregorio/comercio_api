@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { Empresa } from '../../empresas/entities/empresa.entity';
 import { Resena } from '../../resenas/entities/resena.entity';
-import { Exclude } from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
 
 export enum Role {
   ADMIN = 'admin',
@@ -24,6 +24,9 @@ export class Usuario {
   @Column({ length: 100 })
   nombre: string;
 
+  // Solo se serializa en respuestas privadas (perfil propio / panel de admin),
+  // nunca en endpoints públicos como el listado de empresas o reseñas.
+  @Expose({ groups: ['private'] })
   @Column({ length: 100 })
   @Unique(['email'])
   email: string;

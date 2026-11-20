@@ -1,48 +1,54 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
   Get,
-  Patch,
   Param,
-  Body,
   ParseIntPipe,
+  Patch,
+  SerializeOptions,
   UseGuards,
 } from '@nestjs/common';
 import { UsuarioService } from '../services/usuario.service';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { GetUser } from '../../auth/decorators/get-user.decorator';
+import type { JwtUser } from '../../auth/strategies/jwt.strategy';
 import { Role } from '../entities/usuario.entity';
-import { UpdateUsuarioDto } from '../dto/create-usuario.dto';
+import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
+import { UpdateRoleDto } from '../dto/update-role.dto';
 
 @Controller('usuarios')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
+@Roles(Role.ADMIN)
+@SerializeOptions({ groups: ['private'] })
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
 
   @Get()
-  @Roles(Role.ADMIN)
   findAll() {
     return this.usuarioService.findAll();
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usuarioService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateUsuarioDto: UpdateUsuarioDto,
-  ) {
-    return this.usuarioService.update(id, updateUsuarioDto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUsuarioDto) {
+    return this.usuarioService.update(id, dto);
   }
 
   @Patch(':id/role')
-  @Roles(Role.ADMIN)
-  updateRole(@Param('id', ParseIntPipe) id: number, @Body('role') role: Role) {
-    return this.usuarioService.updateRole(id, role);
+  updateRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateRoleDto,
+    @GetUser() user: JwtUser,
+  ) {
+    if (id === user.userId) {
+      throw new BadRequestException('No puedes cambiar tu propio rol');
+    }
+    return this.usuarioService.updateRole(id, dto.role);
   }
 }
