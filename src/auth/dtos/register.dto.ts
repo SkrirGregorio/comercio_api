@@ -1,4 +1,5 @@
 import {
+  Equals,
   IsEmail,
   IsIn,
   IsNotEmpty,
@@ -32,4 +33,10 @@ export class RegisterDto {
     message: 'El rol debe ser consumidor o propietario',
   })
   role?: Role.CONSUMIDOR | Role.PROPIETARIO;
+
+  /** Aceptación de Términos y Política de Privacidad y declaración de mayoría de edad. */
+  @Equals(true, {
+    message: 'Debes aceptar los términos y la política de privacidad',
+  })
+  aceptaTerminos: boolean;
 }
