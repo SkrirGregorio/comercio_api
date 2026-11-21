@@ -40,6 +40,13 @@ export class ServiciosController {
       : this.serviciosService.findAll();
   }
 
+  /** Catálogo con las empresas que ofrecen cada servicio: GET /servicios/catalogo?q=redes */
+  @Public()
+  @Get('catalogo')
+  catalogo(@Query('q') q = '') {
+    return this.serviciosService.catalogo(q);
+  }
+
   @Public()
   @Get('search')
   searchByName(@Query('nombre') nombre = '') {

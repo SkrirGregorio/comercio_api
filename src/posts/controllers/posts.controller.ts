@@ -1,12 +1,14 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Param,
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { PostsService } from '../services/posts.service';
 import { CreatePostDto, UpdatePostDto } from '../dtos/post.dto';
@@ -30,6 +32,16 @@ export class PostsController {
   @Get()
   findAll() {
     return this.postsService.findAll();
+  }
+
+  /** Feed paginado: GET /posts/feed?limit=10&cursor=<id del último post> */
+  @Public()
+  @Get('feed')
+  feed(
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('cursor', new ParseIntPipe({ optional: true })) cursor?: number,
+  ) {
+    return this.postsService.feed(limit, cursor);
   }
 
   @Public()

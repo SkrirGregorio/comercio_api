@@ -161,6 +161,36 @@ export class ServiciosService {
   }
 
   // Método adicional para buscar servicios por nombre (útil para autocompletado)
+  /**
+   * Catálogo público: cada servicio con las empresas que lo ofrecen (solo los datos
+   * necesarios para la tarjeta). Se omiten los servicios que ninguna empresa ofrece.
+   * `q` filtra por nombre o descripción del servicio.
+   */
+  catalogo(q = ''): Promise<Servicio[]> {
+    const qb = this.servicioRepo
+      .createQueryBuilder('servicio')
+      .innerJoin('servicio.empresas', 'empresa')
+      .select([
+        'servicio.id',
+        'servicio.nombre',
+        'servicio.descripcion',
+        'empresa.id',
+        'empresa.nombre',
+        'empresa.urlAvatar',
+        'empresa.direccion',
+      ])
+      .orderBy('servicio.nombre', 'ASC')
+      .addOrderBy('empresa.nombre', 'ASC');
+    const texto = q.trim();
+    if (texto) {
+      qb.where(
+        '(servicio.nombre ILIKE :texto OR servicio.descripcion ILIKE :texto)',
+        { texto: `%${texto}%` },
+      );
+    }
+    return qb.getMany();
+  }
+
   async searchByName(nombre: string): Promise<Servicio[]> {
     return this.servicioRepo
       .createQueryBuilder('servicio')
