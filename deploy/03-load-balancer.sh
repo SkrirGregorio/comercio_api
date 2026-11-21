@@ -57,6 +57,18 @@ pathMatchers:
     routeAction:
       urlRewrite:
         pathPrefixRewrite: /
+  # Rutas de la SPA (/empresas/3, /dashboard...): el bucket no las tiene, se responde
+  # index.html con 200 en lugar de 404. Solo aplica al frontend, no a /api.
+  - priority: 2
+    matchRules:
+    - prefixMatch: /
+    service: ${COMPUTE}/global/backendBuckets/comercio-web-backend
+    customErrorResponsePolicy:
+      errorService: ${COMPUTE}/global/backendBuckets/comercio-web-backend
+      errorResponseRules:
+      - matchResponseCodes: ['404']
+        path: /index.html
+        overrideResponseCode: 200
 YAML
 gc compute url-maps import "$URL_MAP" --global --source="$TMP/url-map.yaml"
 
