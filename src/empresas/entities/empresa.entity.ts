@@ -8,12 +8,23 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  ValueTransformer,
 } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { Servicio } from '../../servicios/entities/servicio.entity';
 import { Resena } from '../../resenas/entities/resena.entity';
 import { Post } from '../../posts/entities/post.entity';
 import { IsEmail } from 'class-validator';
+
+/**
+ * PostgreSQL devuelve las columnas decimal como texto ('14.29502000') para no perder
+ * precisión. Para coordenadas basta con number, que es lo que esperan Google Maps
+ * y el frontend.
+ */
+const decimalANumero: ValueTransformer = {
+  to: (valor?: number | null) => valor,
+  from: (valor?: string | null) => (valor == null ? valor : Number(valor)),
+};
 
 @Entity('empresas')
 export class Empresa {
@@ -32,10 +43,20 @@ export class Empresa {
   @Column({ type: 'varchar', length: 20, nullable: true })
   telefono: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 8 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 8,
+    transformer: decimalANumero,
+  })
   latitud: number;
 
-  @Column({ type: 'decimal', precision: 11, scale: 8 })
+  @Column({
+    type: 'decimal',
+    precision: 11,
+    scale: 8,
+    transformer: decimalANumero,
+  })
   longitud: number;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
